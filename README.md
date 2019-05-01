@@ -90,20 +90,21 @@ This fork adds four events to cachegoose, which can be listened to from the `cac
 
 ```javascript
 cachegoose.cache.on('get', key => {
-  console.log(`` `${key} was fetched from cache` ``)
+    console.log(`${key} was fetched from cache`)
 })
 
 cachegoose.cache.on('set', key => {
-  console.log(`` `${key} was set in cache` ``)
+    console.log(`${key} was set in cache`)
 })
 
 cachegoose.cache.on('del', key => {
-  console.log(`` `${key} was deleted from cache` ``)
+    console.log(`${key} was deleted from cache`)
 })
 
 cachegoose.cache.on('clear', () => {
-  console.log("Cache was cleared")
+    console.log('Cache was cleared')
 })
+```
 
 ## Caching populated documents
 
@@ -112,4 +113,7 @@ When a document is returned from the cache, cachegoose will [hydrate](http://mon
 ## Test
 
 npm test
+
+```
+
 ```
