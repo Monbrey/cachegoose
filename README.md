@@ -1,24 +1,19 @@
-# cachegoose #
+# cachegoose-events
 
-#### Mongoose caching that actually works. ####
+#### Mongoose caching that actually works.
 
 [![Build Status](https://travis-ci.org/boblauer/cachegoose.svg)](https://travis-ci.org/boblauer/cachegoose)
 
-## About ##
+## About
 
 A Mongoose caching module that works exactly how you would expect it to, with the latest version of Mongoose.
+This version is a fork of the original cachegoose module by boblauer, but also adds the `on`, `off`, `once` and `emit` functions of the EventEmitter
 
-```
-Important:
-
-If you are using Mongoose 4.x or below, you need to use version 4.1 of this library.
-```
-
-## Usage ##
+## Usage
 
 ```javascript
-var mongoose = require('mongoose');
-var cachegoose = require('cachegoose');
+const mongoose = require('mongoose');
+const cachegoose = require('cachegoose');
 
 cachegoose(mongoose, {
   engine: 'redis',    /* If you don't specify the redis engine,      */
@@ -69,30 +64,52 @@ ChildrenSchema.post('save', function(child) {
 });
 ```
 
-Insert `.cache()` into the queries you want to cache, and they will be cached.  Works with `select`, `lean`, `sort`, and anything else that will modify the results of a query.
+Insert `.cache()` into the queries you want to cache, and they will be cached. Works with `select`, `lean`, `sort`, and anything else that will modify the results of a query.
 
-## Clearing the cache ##
+## Clearing the cache
 
 If you want to clear the cache for a specific query, you must specify the cache key yourself:
 
 ```js
 function getChildrenByParentId(parentId, cb) {
-  Children
-    .find({ parentId })
-    .cache(0, `${parentId}_children`)
-    .exec(cb);
+    Children.find({ parentId })
+        .cache(0, `${parentId}_children`)
+        .exec(cb)
 }
 
 function clearChildrenByParentIdCache(parentId, cb) {
-  cachegoose.clearCache(`${parentId}_children`, cb);
+    cachegoose.clearCache(`${parentId}_children`, cb)
 }
 ```
 
 If you call `cachegoose.clearCache(null, cb)` without passing a cache key as the first parameter, the entire cache will be cleared for all queries.
 
-## Caching populated documents ##
+## Listening to cache events
+
+This fork adds four events to cachegoose, which can be listened to from the `cachegoose.cache`
+
+```javascript
+cachegoose.cache.on('get', key => {
+  console.log(`` `${key} was fetched from cache` ``)
+})
+
+cachegoose.cache.on('set', key => {
+  console.log(`` `${key} was set in cache` ``)
+})
+
+cachegoose.cache.on('del', key => {
+  console.log(`` `${key} was deleted from cache` ``)
+})
+
+cachegoose.cache.on('clear', () => {
+  console.log("Cache was cleared")
+})
+
+## Caching populated documents
 
 When a document is returned from the cache, cachegoose will [hydrate](http://mongoosejs.com/docs/api.html#model_Model.hydrate) it, which initializes it's virtuals/methods. Hydrating a populated document will discard any populated fields (see [Automattic/mongoose#4727](https://github.com/Automattic/mongoose/issues/4727)). To cache populated documents without losing child documents, you must use `.lean()`, however if you do this you will not be able to use any virtuals/methods (it will be a plain object).
 
-## Test ##
+## Test
+
 npm test
+```
