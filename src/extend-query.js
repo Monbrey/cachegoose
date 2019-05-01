@@ -1,92 +1,94 @@
-'use strict';
+'use strict'
 
-const generateKey = require('./generate-key');
+const generateKey = require('./generate-key')
 
 module.exports = function(mongoose, cache) {
-  const exec = mongoose.Query.prototype.exec;
+    const exec = mongoose.Query.prototype.exec
 
-  mongoose.Query.prototype.exec = function(op, callback = function() { }) {
-    if (!this.hasOwnProperty('_ttl')) return exec.apply(this, arguments);
+    mongoose.Query.prototype.exec = function(op, callback = function() {}) {
+        if (!this.hasOwnProperty('_ttl')) return exec.apply(this, arguments)
 
-    if (typeof op === 'function') {
-      callback = op;
-      op = null;
-    } else if (typeof op === 'string') {
-      this.op = op;
-    }
-
-    const key = this._key || this.getCacheKey();
-    const ttl = this._ttl;
-    const isCount = ['count', 'countDocuments', 'estimatedDocumentCount'].includes(this.op);
-    const isLean = this._mongooseOptions.lean;
-    const model = this.model.modelName;
-
-    return new Promise((resolve, reject) => {
-      cache.get(key, (err, cachedResults) => { //eslint-disable-line handle-callback-err
-        if (cachedResults != null) {
-          if (isCount) {
-            callback(null, cachedResults);
-            return resolve(cachedResults);
-          }
-
-          if (!isLean) {
-            const constructor = mongoose.model(model);
-            cachedResults = Array.isArray(cachedResults) ?
-              cachedResults.map(hydrateModel(constructor)) :
-              hydrateModel(constructor)(cachedResults);
-          }
-
-          callback(null, cachedResults);
-          return resolve(cachedResults);
+        if (typeof op === 'function') {
+            callback = op
+            op = null
+        } else if (typeof op === 'string') {
+            this.op = op
         }
 
-        exec
-          .call(this)
-          .then((results) => {
-            cache.set(key, results, ttl, () => {
-              callback(null, results);
-              return resolve(results);
-            });
-          })
-          .catch((err) => {
-            callback(err);
-            reject(err);
-          });
-      });
-    });
-  };
+        const key = this._key || this.getCacheKey()
+        const ttl = this._ttl
+        const isCount = ['count', 'countDocuments', 'estimatedDocumentCount'].includes(this.op)
+        const isLean = this._mongooseOptions.lean
+        const model = this.model.modelName
 
-  mongoose.Query.prototype.cache = function(ttl = 60, customKey = '') {
-    if (typeof ttl === 'string') {
-      customKey = ttl;
-      ttl = 60;
+        return new Promise((resolve, reject) => {
+            cache.get(key, (err, cachedResults) => {
+                //eslint-disable-line handle-callback-err
+                if (cachedResults != null) {
+                    cache.emit('get', key)
+                    if (isCount) {
+                        callback(null, cachedResults)
+                        return resolve(cachedResults)
+                    }
+
+                    if (!isLean) {
+                        const constructor = mongoose.model(model)
+                        cachedResults = Array.isArray(cachedResults)
+                            ? cachedResults.map(hydrateModel(constructor))
+                            : hydrateModel(constructor)(cachedResults)
+                    }
+
+                    callback(null, cachedResults)
+                    return resolve(cachedResults)
+                }
+
+                exec.call(this)
+                    .then(results => {
+                        cache.set(key, results, ttl, () => {
+                            cache.emit('set', key)
+                            callback(null, results)
+                            return resolve(results)
+                        })
+                    })
+                    .catch(err => {
+                        callback(err)
+                        reject(err)
+                    })
+            })
+        })
     }
 
-    this._ttl = ttl;
-    this._key = customKey;
-    return this;
-  };
+    mongoose.Query.prototype.cache = function(ttl = 60, customKey = '') {
+        if (typeof ttl === 'string') {
+            customKey = ttl
+            ttl = 60
+        }
 
-  mongoose.Query.prototype.getCacheKey = function() {
-    const key = {
-      model: this.model.modelName,
-      op: this.op,
-      skip: this.options.skip,
-      limit: this.options.limit,
-      sort: this.options.sort,
-      _options: this._mongooseOptions,
-      _conditions: this._conditions,
-      _fields: this._fields,
-      _path: this._path,
-      _distinct: this._distinct
-    };
+        this._ttl = ttl
+        this._key = customKey
+        return this
+    }
 
-    return generateKey(key);
-  };
-};
+    mongoose.Query.prototype.getCacheKey = function() {
+        const key = {
+            model: this.model.modelName,
+            op: this.op,
+            skip: this.options.skip,
+            limit: this.options.limit,
+            sort: this.options.sort,
+            _options: this._mongooseOptions,
+            _conditions: this._conditions,
+            _fields: this._fields,
+            _path: this._path,
+            _distinct: this._distinct
+        }
+
+        return generateKey(key)
+    }
+}
 
 function hydrateModel(constructor) {
-  return (data) => {
-    return constructor.hydrate(data);
-  };
+    return data => {
+        return constructor.hydrate(data)
+    }
 }

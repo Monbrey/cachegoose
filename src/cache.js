@@ -19,25 +19,24 @@ Object.defineProperties(Cache.prototype, {
     emit: { value: emit },
     get: {
         value: function(key, cb = noop) {
-            this.emit('get', key)
             return this.cache.get(key, cb)
         }
     },
     set: {
         value: function(key, value, ttl, cb = noop) {
-            this.emit('set', key)
             if (ttl === 0) ttl = -1
             return this.cache.set(key, value, ttl, cb)
         }
     },
     del: {
         value: function(key, cb = noop) {
-            this.emit('set', key)
+            this.emit('del', key)
             return this.cache.del(key, cb)
         }
     },
     clear: {
         value: function(cb = noop) {
+            this.emit('clear')
             return this.cache.clear(cb)
         }
     }
