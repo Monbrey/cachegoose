@@ -1,29 +1,48 @@
-'use strict';
+'use strict'
 
-const Cacheman = require('cacheman');
-const noop = () => {};
+const Cacheman = require('cacheman')
+const noop = () => {}
 
-function Cache(options) {
-  this._cache = new Cacheman('cachegoose-cache', options);
+const EventEmitter = require('events')
+const { on, once, off, emit } = new EventEmitter()
+
+class Cache {
+    constructor(options) {
+        this.cache = new Cacheman('cachegoose-cache', options)
+    }
 }
 
-Cache.prototype.get = function(key, cb = noop) {
-  return this._cache.get(key, cb);
-};
-
-Cache.prototype.set = function(key, value, ttl, cb = noop) {
-  if (ttl === 0) ttl = -1;
-  return this._cache.set(key, value, ttl, cb);
-};
-
-Cache.prototype.del = function(key, cb = noop) {
-  return this._cache.del(key, cb);
-};
-
-Cache.prototype.clear = function(cb = noop) {
-  return this._cache.clear(cb);
-};
+Object.defineProperties(Cache.prototype, {
+    on: { value: on },
+    once: { value: once },
+    off: { value: off },
+    emit: { value: emit },
+    get: {
+        value: function(key, cb = noop) {
+            this.emit('get', key)
+            return this.cache.get(key, cb)
+        }
+    },
+    set: {
+        value: function(key, value, ttl, cb = noop) {
+            this.emit('set', key)
+            if (ttl === 0) ttl = -1
+            return this.cache.set(key, value, ttl, cb)
+        }
+    },
+    del: {
+        value: function(key, cb = noop) {
+            this.emit('set', key)
+            return this.cache.del(key, cb)
+        }
+    },
+    clear: {
+        value: function(cb = noop) {
+            return this.cache.clear(cb)
+        }
+    }
+})
 
 module.exports = function(options) {
-  return new Cache(options);
-};
+    return new Cache(options)
+}
