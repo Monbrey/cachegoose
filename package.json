@@ -1,6 +1,6 @@
 {
     "name": "cachegoose-events",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "The existing cachegoose package, now with event emitting.",
     "main": "index.js",
     "directories": {

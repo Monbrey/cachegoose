@@ -23,7 +23,7 @@ module.exports = function(mongoose, cache) {
 
         return new Promise((resolve, reject) => {
             cache.get(key, (err, cachedResults) => {
-                //eslint-disable-line handle-callback-err
+                // eslint-disable-line handle-callback-err
                 if (cachedResults != null) {
                     cache.emit('get', key)
                     if (isCount) {

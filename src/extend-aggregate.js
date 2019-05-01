@@ -28,7 +28,7 @@ module.exports = function(mongoose, cache) {
 
             return new Promise((resolve, reject) => {
                 cache.get(key, (err, cachedResults) => {
-                    //eslint-disable-line handle-callback-err
+                    // eslint-disable-line handle-callback-err
                     if (cachedResults) {
                         cache.emit('get', key)
                         callback(null, cachedResults)
