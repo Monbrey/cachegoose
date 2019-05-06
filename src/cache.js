@@ -17,6 +17,11 @@ Object.defineProperties(Cache.prototype, {
     once: { value: once },
     off: { value: off },
     emit: { value: emit },
+    keys: {
+        value: function() {
+            return this.cache.keys()
+        }
+    },
     get: {
         value: function(key, cb = noop) {
             return this.cache.get(key, cb)
